@@ -1,0 +1,27 @@
+{
+  "name": "react-state-router",
+  "version": "1.0.0",
+  "description": "state based react router linked to url through parseUrl and toUrl functions, has working route blocking control mechanisim, and async initialisation phase",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --watch --config=jest.config.js"
+  },
+  "keywords": [
+    "router",
+    "react-router"
+  ],
+  "author": "maa105",
+  "license": "ISC",
+  "dependencies": {
+    "history": "^4.7.2"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-jest": "^23.6.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "jest": "^23.6.0",
+    "jest-html-reporter": "^2.4.2",
+    "regenerator-runtime": "^0.12.1"
+  }
+}
