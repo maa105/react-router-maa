@@ -17,7 +17,7 @@ import rootReducer from './reducers';
 import './index.css';
 import App from './components/App';
 import { changeRouterState, initRouter } from './actions';
-import { initializeRouter } from 'react-state-router';
+import { initializeRouter } from 'react-router-maa';
 import { parseUrl, toUrl } from './utils';
 
 const store = createStore(rootReducer);
