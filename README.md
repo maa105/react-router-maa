@@ -75,7 +75,7 @@ The initial part of the state that is not stored in the url. Will be merged with
 
 Can be set to either 'browser', 'hash', or 'memory' selects the underlying history create function to be used.
 
-##isInitialised(): Boolean
+## isInitialised(): Boolean
 
 ### @returns: Boolean
 
