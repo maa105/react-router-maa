@@ -1,5 +1,5 @@
 {
-  "name": "react-state-router",
+  "name": "react-router-maa",
   "version": "1.0.0",
   "description": "state based react router linked to url through parseUrl and toUrl functions, has working route blocking control mechanisim, and async initialisation phase",
   "main": "index.js",
