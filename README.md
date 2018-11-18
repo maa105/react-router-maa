@@ -6,7 +6,7 @@ The router has a built in async (by returning a promise) initialisation phase wh
 
 The router provides out of the box a working async route blocking mechanism available through pushTransitionAllowedCheckFunction. Where you add a function to be called before route is changed and if this function returns false the route will not change (utilise promises for async operation). Note by default once your function allows transition by returning anything but false, it (your function) will be poped from the functions to be called at route change.
 
-The state of the router is saved internally inside the router. To hook it to your react app use something like bellow which is specific to redux:
+The state of the router is saved internally inside the router. To hook it to your react app use something like bellow which is specific to redux ([full example here](https://github.com/maa105/react-router-maa/tree/master/example)):
 
 ```js
 import React from 'react';
@@ -38,6 +38,10 @@ ReactDOM.render(
 );
 
 ```
+
+# Example
+
+I created a small app to demonstrate the router in action [check example here](https://github.com/maa105/react-router-maa/tree/master/example)
 
 # API
 
