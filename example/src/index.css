@@ -1,0 +1,72 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  width: 100%;
+  height: 100%;
+  font-family: sans-serif;
+}
+
+.loader { 
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,.3);
+  z-index: 9999999;
+}
+.loader > * {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  font-size: 15vmin;
+  color: white;
+}
+
+.color-black {
+  color: black;
+}
+.color-red {
+  color: red;
+}
+.color-yellow {
+  color: #fbdc08;
+}
+
+.display-inline-block {
+  display: inline-block;
+}
+
+.scale-on-hover:hover {
+  transform: scale(1.25);
+  transform-origin: 50% 50%;
+}
+.h-center-children {
+  text-align: center;  
+}
+.no-underline {
+  text-decoration: none !important;
+}
+.no-underline:hover {
+  text-decoration: none !important;
+}
+.underline {
+  text-decoration: underline !important;
+}
+.underline-on-hover:hover {
+  text-decoration: underline !important;
+}
+.cursor-hand, .cursor-pointer {
+  cursor: pointer !important;
+}
+.cursor-default {
+  cursor: default !important;
+}
+.cursor-wait {
+  cursor: wait !important;
+}
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}

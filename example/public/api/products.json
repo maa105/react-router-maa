@@ -1,0 +1,6 @@
+{
+  "products": [
+    { "id": "12345", "name": "Laptop", "details": "intel i9 128GB Ram 4TB SSD Nvidea 1180Ti" },
+    { "id": "11111", "name": "Screen", "details": "27inch 4k 120Hz LED with HDMI input" }
+  ]
+}
