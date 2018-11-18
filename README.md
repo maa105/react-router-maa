@@ -41,7 +41,9 @@ ReactDOM.render(
 
 # Example
 
-I created a small app to demonstrate the router in action [check example here](https://github.com/maa105/react-router-maa/tree/master/example)
+I created a small app to demonstrate the router in action [check example here](https://github.com/maa105/react-router-maa/tree/master/example).
+
+I highly recommend checking the example as it helps demonstrate the power of this router in real world senarios. Even if you dont download and run the example locally checking the readme of the example is useful also.
 
 # API
 
