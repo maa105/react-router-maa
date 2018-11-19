@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/maa105/react-router-maa.svg?branch=master)](https://travis-ci.com/maa105/react-router-maa)
+
 # Router Overview
 
 State based router for react (and others not explicit to react). The idea is simple I want the url of the site to be linked to a state object. To do so the user supplies the router with a parseUrl and a toUrl function. And changing the url is done by changing the state object.
