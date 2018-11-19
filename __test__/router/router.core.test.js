@@ -126,10 +126,10 @@ describe('router.core', () => {
   });
 
   afterEach(() => {
-    delete global.window;
     global.setTimeout = globalSetTimeout;
     global.clearTimeout = globalClearTimeout;
     global.window.location.reload = globalLocationReload;
+    delete global.window;
   });
 
   function initTest() {

@@ -1,11 +1,12 @@
 {
   "name": "react-router-maa",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "state based react router linked to url through parseUrl and toUrl functions, has working route blocking control mechanisim, and async initialisation phase",
   "main": "index.js",
   "homepage": "https://github.com/maa105/react-router-maa",
   "scripts": {
-    "test": "jest --watch --config=jest.config.js"
+    "test": "jest --watch --config=jest.config.js",
+    "test-once": "jest --config=jest.config.js --coverage"
   },
   "keywords": [
     "router",
