@@ -54,7 +54,7 @@ export const __PRIVATES__ = {
   }
 };
 
-export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration = 10000, initialNoneUrlState = {}, historyType = 'browser', initUrl) => {
+export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration = 10000, baseUrl = '', initialNoneUrlState = {}, historyType = 'browser', initUrl) => {
   return new Promise((resolve, reject) => {
     try {
       if(history) {
@@ -92,7 +92,8 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
           const { location, action } = blockArgsByKey[key];
           delete blockArgsByKey[key];
           return checkIfTransitionAllowed(location, action, cb);
-        }
+        },
+        basename: baseUrl
       });
     
       go = history.go.bind(history);

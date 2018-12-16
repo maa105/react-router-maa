@@ -16,6 +16,6 @@ export { pushTransitionAllowedCheckFunction };
 
 setCheckIfIsInitialisedFunction(isInitialised);
 
-export const initializeRouter = (parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration = 10000, initialNoneUrlState = {}, historyType = 'browser') => {
-  return initializeRouterCore(isTransitionAllowed, parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration, initialNoneUrlState, historyType);
+export const initializeRouter = (parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration = 10000, baseUrl = '', initialNoneUrlState = {}, historyType = 'browser') => {
+  return initializeRouterCore(isTransitionAllowed, parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration, baseUrl, initialNoneUrlState, historyType);
 };

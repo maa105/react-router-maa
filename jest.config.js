@@ -8,5 +8,5 @@ module.exports = {
   collectCoverageFrom: [
     'router/**/*.js'
   ],
-  "coverageReporters": ["text", "html"]
+  "coverageReporters": ["html", "json", "lcov", "text", "clover"]
 };

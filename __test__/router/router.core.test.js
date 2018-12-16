@@ -9,7 +9,7 @@ describe('router.core', () => {
   
   let globalLocationReload;
 
-  let initKey, initialNoneUrlState, routeChangeHandler, defaultTimeout;
+  let initKey, initialNoneUrlState, routeChangeHandler, defaultTimeout, baseUrl;
   
   let isTransitionAllowed, transitionAllowedHandler;
   
@@ -59,6 +59,7 @@ describe('router.core', () => {
     initialNoneUrlState = { noneUrl: '123' };
     routeChangeHandler = jestFn();
     defaultTimeout = 1000;
+    baseUrl = '';
   
     isTransitionAllowed = true;
     transitionAllowedHandler = jestFn(() => {
@@ -79,7 +80,7 @@ describe('router.core', () => {
     jest.spyOn(historyCreator, 'createBrowserHistory').mockImplementation((options) => {
       getUserConfirmationFunction = options.getUserConfirmation;
       expect(typeof(getUserConfirmationFunction)).toEqual('function');
-      expect(options).toEqual({ getUserConfirmation: getUserConfirmationFunction });
+      expect(options).toEqual({ basename: baseUrl, getUserConfirmation: getUserConfirmationFunction });
       return (history = {
         go: jestFn().mockImplementation(() => historyReturns.go),
         push: jestFn().mockImplementation(() => historyReturns.push),
@@ -95,7 +96,7 @@ describe('router.core', () => {
     jest.spyOn(historyCreator, 'createMemoryHistory').mockImplementation((options) => {
       getUserConfirmationFunction = options.getUserConfirmation;
       expect(typeof(getUserConfirmationFunction)).toEqual('function');
-      expect(options).toEqual({ getUserConfirmation: getUserConfirmationFunction });
+      expect(options).toEqual({ basename: baseUrl, getUserConfirmation: getUserConfirmationFunction });
       return (history = {
         go: jestFn().mockImplementation(() => historyReturns.go),
         push: jestFn().mockImplementation(() => historyReturns.push),
@@ -111,7 +112,7 @@ describe('router.core', () => {
     jest.spyOn(historyCreator, 'createHashHistory').mockImplementation((options) => {
       getUserConfirmationFunction = options.getUserConfirmation;
       expect(typeof(getUserConfirmationFunction)).toEqual('function');
-      expect(options).toEqual({ getUserConfirmation: getUserConfirmationFunction });
+      expect(options).toEqual({ basename: baseUrl, getUserConfirmation: getUserConfirmationFunction });
       return (history = {
         go: jestFn().mockImplementation(() => historyReturns.go),
         push: jestFn().mockImplementation(() => historyReturns.push),
@@ -134,7 +135,7 @@ describe('router.core', () => {
 
   function initTest() {
 
-    const initPromise = initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, initialNoneUrlState, 'browser', '/');
+    const initPromise = initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, baseUrl, initialNoneUrlState, 'browser', '/').catch((err) => { console.log('ERROR::', err); throw err; });
 
     expect(historyCreator.createBrowserHistory).toHaveBeenCalled();
 
@@ -171,27 +172,32 @@ describe('router.core', () => {
 
   test('initializeRouter calls correct create history functions', (done) => {
 
-    initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, initialNoneUrlState, 'browser', '/');
+    baseUrl = '/the/base';
+
+    initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, baseUrl, initialNoneUrlState, 'browser', '/');
 
     expect(historyCreator.createBrowserHistory).toHaveBeenCalled();
     expect(historyCreator.createMemoryHistory).not.toHaveBeenCalled();
     expect(historyCreator.createHashHistory).not.toHaveBeenCalled();
+    expect(historyCreator.createBrowserHistory.mock.calls[0][0].basename).toEqual(baseUrl);
 
     __PRIVATES__.reset();
   
-    initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, initialNoneUrlState, 'memory', '/');
+    initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, baseUrl, initialNoneUrlState, 'memory', '/');
 
     expect(historyCreator.createBrowserHistory).toHaveBeenCalled();
     expect(historyCreator.createMemoryHistory).toHaveBeenCalled();
     expect(historyCreator.createHashHistory).not.toHaveBeenCalled();
+    expect(historyCreator.createMemoryHistory.mock.calls[0][0].basename).toEqual(baseUrl);
 
     __PRIVATES__.reset();
   
-    initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, initialNoneUrlState, 'hash', '/');
+    initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, baseUrl, initialNoneUrlState, 'hash', '/');
 
     expect(historyCreator.createBrowserHistory).toHaveBeenCalled();
     expect(historyCreator.createMemoryHistory).toHaveBeenCalled();
     expect(historyCreator.createHashHistory).toHaveBeenCalled();
+    expect(historyCreator.createHashHistory.mock.calls[0][0].basename).toEqual(baseUrl);
 
     done();
   });
