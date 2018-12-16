@@ -49,7 +49,7 @@ I highly recommend checking the example as it helps demonstrate the power of thi
 
 # API
 
-## initializeRouter(parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration = 10000, initialNoneUrlState = {}, historyType = 'browser')
+## initializeRouter(parseUrlFunction, toUrlFunction, mergeRouterStateChangeFunction, routerStateChangedHandler, initializationHandler, initializationTimeoutDuration = 10000, baseUrl='', initialNoneUrlState = {}, historyType = 'browser')
 
 ### parseUrlFunction(url: string)
 
@@ -74,6 +74,10 @@ a function that will be called upon initialization of the router. It will be sup
 ### initializationTimeoutDuration: integer (ms) default 10 seconds
 
 The duration in milliseconds to wait before timing out the initialisation function. Set to zero (or falsey in general) to disable the timeout.
+
+### baseUrl: string default empty string ('')
+
+This will be passed as basename to the history object. It represents the base part of the url of your site which will be prefixed for all urls.
 
 ### initialNoneUrlState: Object default empty object
 

@@ -135,7 +135,7 @@ describe('router.core', () => {
 
   function initTest() {
 
-    const initPromise = initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, baseUrl, initialNoneUrlState, 'browser', '/').catch((err) => { console.log('ERROR::', err); throw err; });
+    const initPromise = initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, baseUrl, initialNoneUrlState, 'browser', '/');
 
     expect(historyCreator.createBrowserHistory).toHaveBeenCalled();
 
