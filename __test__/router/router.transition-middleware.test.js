@@ -265,12 +265,22 @@ describe('router.transition-middleware', () => {
     expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction);
     expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(2);
 
-    pop2();
+    const transitionAllowedCheckFunction4 = () => true;
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(2);
+    expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
+    const pop4 = pushTransitionAllowedCheckFunction(transitionAllowedCheckFunction4);
+    expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(3);
+
+    pop3();
 
     expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
     expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);
     expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction);
-    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(1);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(2);
 
     expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
     resolveFunction(true);
@@ -279,11 +289,19 @@ describe('router.transition-middleware', () => {
     .then((res) => {
       expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(false);
       expect(res).toEqual(true);
-      expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);  // 1 poped since route allowed and replaced by one from routerTransitionAllowedChecksPushFunctionsStack
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(2);  // 1 poped since route allowed and 2 added from routerTransitionAllowedChecksPushFunctionsStack
       expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(0);
-      expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction3);
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction2);
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks()[1].checkFunc).toEqual(transitionAllowedCheckFunction4);
       
       pop3();
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(2);  // nothing
+
+      pop2();
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction4);
+
+      pop4();
       expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(0);
 
       done();
