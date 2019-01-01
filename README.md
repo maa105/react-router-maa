@@ -6,7 +6,7 @@ State based router for react (and others not explicit to react). The idea is sim
 
 The router has a built in async (by returning a promise) initialisation phase which can be utilised by supplying the initializeRouter the initializationHandler parameter which if it return a state or a url(string) will set the initial url of the site (if it returns falsey value the initial url will not change). Note you can return a promise for async functionality. This is important for example if the initial url is say /user/:userId and you want to get the user info from the server and if no user is available with set id u want to redirect to another page say /home.
 
-The router provides out of the box a working async route blocking mechanism available through pushTransitionAllowedCheckFunction. Where you add a function to be called before route is changed and if this function returns false the route will not change (utilise promises for async operation). Note by default once your function allows transition by returning anything but false, it (your function) will be poped from the functions to be called at route change.
+The router provides out of the box a working async route blocking mechanism available through pushTransitionAllowedCheckFunction. Where you add a function to be called before route is changed and if this function returns false the route will not change (utilise promises for async operation).
 
 The state of the router is saved internally inside the router. To hook it to your react app use something like bellow which is specific to redux ([full example here](https://github.com/maa105/react-router-maa/tree/master/example)):
 
@@ -85,7 +85,7 @@ The initial part of the state that is not stored in the url. Will be merged with
 
 ### historyType: string default 'browser'
 
-Can be set to either 'browser', 'hash', or 'memory' selects the underlying history create function to be used.
+Can be set to either 'browser', 'hash', 'memory', or 'hash-maa' selects the underlying history create function to be used. note 'hash-maa' is inspired by [this comment](https://github.com/ReactTraining/history/issues/435#issuecomment-287849591), it uses internaly browser history but it abstracts this from the user.
 
 ## isInitialised(): Boolean
 
@@ -169,16 +169,30 @@ Returns length of the states object.
 
 Returns length of the states object. E.g. if you navigated 10 times this will be 10.
 
-## pushTransitionAllowedCheckFunction(transitionAllowedCheckFunction, popOncePasses = true): Function
+## pushTransitionAllowedCheckFunction(checkFunc, popOnceRouteAllowed = true, priority = 0, popCheckFunc = undefined): Function
 
-pushes a transition allowed checkk function.
+pushes a transition allowed check function in order of priority.
 
-### transitionAllowedCheckFunction: Function
+### checkFunc: Function
 
-A function to be called to check if transition is to be allowed or not returning true (or anything other than explicitly false) will allow transition returning false will block transition. note: this function can be async i.e. returning a promise that resolves to true or false has the same effect but is async. also note that by default when this function allows transition (like returns anything but false) it will be poped (removed from the check call stack). to disable this behaviour send popOncePasses (the second argument) as false. This is done specifically like this cause most of the time you push a function for example at pageLoad/componentDidLoad to block transition if some changes have not been saved and once the user confirms or there is no changes anyways, you want this function check to be removed. Also note that only the top most function is called not all the functions in the stack (it made more sence to me).
+A function to be called to check if transition is to be allowed or not returning true will immitiately allow transition returning false will immidiately block transition returning undefined (like dont care) will keep checking other check functions on the stack. note: this function can be async i.e. returning a promise that resolves to true, false or undefined has the same effect as above but will be awited for. Also note that by default when a route is allowed the function will be poped (removed from the check call stack), to disable this behaviour send popOnceRouteAllowed (the second argument) as false. This is done specifically like this cause most of the time you push a function for example at pageLoad/componentDidLoad to block transition if some changes have not been saved and once the user confirms or there is no changes anyways, you want the check function to be removed. NOTE: the check function will be called with one argument of the following format:
+```
+  {
+    state,    // the current state
+    newState, // the tentative next state
+    action,   // 'POP', 'PUSH' or 'REPLACE' as in the [history](https://github.com/ReactTraining/history) package
+    popMe     // a function if called will pop the check regardless if route is allowed or not
+  }
+```
 
-### popOncePasses: Boolean default true
+### popOnceRouteAllowed: Boolean default true
 
-If set to false will not remove the transitionAllowedCheckFunction when it allows the transition. See argument transitionAllowedCheckFunction description above.
+If set to false will not remove the checkFunction when transition is allowed. See argument in checkFunc description above.
 
+### priority: Number default 0
 
+The priority of this check. Bigger priorities will be called first. I used this for example in the case of a form where you want to block the transition if there is unsaved changes but for some reason the server returns a 401 error and you need to redirect to login page. To do so here just add the 401 check with higher priority and only return true if the the nextState is for the login page and the action is not POP. NOTE: if two functions have same priority the last one added will be called first.
+
+### popCheckFunc: function
+
+Optional function to call once route is allowed to check whether to remove the check or not. NOTE: if popOnceRouteAllowed is set to true this function is useless

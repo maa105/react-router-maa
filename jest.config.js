@@ -4,6 +4,7 @@ module.exports = {
   transform: {
     '^.+\\.(js|jsx)?$': 'babel-jest'
   },
+  testURL: 'http://localhost/browser-init-url#/hash-init-url',
   transformIgnorePatterns: ['<rootDir>/node_modules/'],
   collectCoverageFrom: [
     'router/**/*.js'

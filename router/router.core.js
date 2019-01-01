@@ -1,5 +1,5 @@
 import * as historyCreator from 'history';
-import { promisifyFunctionCall } from './router.util';
+import { promisifyFunctionCall, ensureSlashPrefix, ensureSlashSuffix, trimSlashSuffix } from './router.util';
 
 const noBlockKey = Date.now() + Math.round(Math.random() * 99999999);
 const initKey = Math.round(Math.random() * 999) + Date.now() + Math.round(Math.random() * 999);
@@ -18,6 +18,11 @@ let go;
 let push;
 let replace;
 
+export const MEMORY_HISTORY_TYPE = 1;
+export const BROWSER_HISTORY_TYPE = 2;
+export const HASH_HISTORY_TYPE = 3;
+export const HASH_MAA_HISTORY_TYPE = 4;
+
 let routerStatesLocation = -1;
 const routerStates = [];
 
@@ -26,9 +31,32 @@ const checkIfTransitionAllowed = (location, action, callback) => {
   if(noBlock) {
     return callback(true);
   }
-  Promise.resolve(isTransitionAllowed())
+  let newState;
+  if(action === 'POP') {
+    newState = getRouterState(getStateIndexByKey(location.key) - routerStatesLocation);
+  }
+  else {
+    newState = parseUrl(getUrlFromLocation(location));
+  }
+  return promisifyFunctionCall(isTransitionAllowed, [{
+    state: getRouterState(),
+    newState: newState,
+    action
+  }])
   .then((allowed) => callback(allowed !== false))
   .catch(() => callback(false));
+};
+
+const getStateIndexByKey = (key) => {
+  for(let i = 0; i < routerStates.length; i++) {
+    if(routerStates[i].key === key) {
+      return i;
+    }
+  }
+};
+
+let getUrlFromLocation = (location) => {
+  return location.pathname;
 };
 
 export const __PRIVATES__ = {
@@ -38,19 +66,34 @@ export const __PRIVATES__ = {
   routerStates,
   checkIfTransitionAllowed,
   defaultMergeRouterStateChange: mergeRouterStateChange,
+  defaultGetUrlFromLocation: getUrlFromLocation,
   blockArgsByKey: {},
+  getStateIndexByKey,
   reset() {
     history = undefined;
     initialised = false;
     routerStates.splice(0, routerStates.length);
     routerStatesLocation = -1;
     mergeRouterStateChange = __PRIVATES__.defaultMergeRouterStateChange;
+    getUrlFromLocation = __PRIVATES__.defaultGetUrlFromLocation;
   },
   setRouterStateLocation(i) {
     routerStatesLocation = i;
   },
-  getIsTransitionAllowed() {
+  get_isTransitionAllowed() {
     return isTransitionAllowed;
+  },
+  get_getUrlFromLocation() {
+    return getUrlFromLocation;
+  },
+  set_getUrlFromLocation(_getUrlFromLocation) {
+    getUrlFromLocation = _getUrlFromLocation;
+  },
+  get_mergeRouterStateChange() {
+    return mergeRouterStateChange;
+  },
+  set_mergeRouterStateChange(_mergeRouterStateChange) {
+    mergeRouterStateChange = _mergeRouterStateChange;
   }
 };
 
@@ -62,23 +105,58 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
         return;
       }
 
-      let createFunctionKey = (historyType || 'browser').trim().toLowerCase();
+      let createFunctionKey = historyType || BROWSER_HISTORY_TYPE;
+      if(typeof(historyType) === 'string') {
+        historyType = historyType.trim().toLocaleLowerCase();
+      }
+
       switch(createFunctionKey) {
         case 'browser':
+        case BROWSER_HISTORY_TYPE:
           initUrl = initUrl || window.location.pathname;
           createFunctionKey = 'createBrowserHistory';
           break;
         case 'memory':
+        case MEMORY_HISTORY_TYPE:
           initUrl = initUrl || '/';
           createFunctionKey = 'createMemoryHistory';
           break;
         case 'hash':
+        case HASH_HISTORY_TYPE:
           initUrl = initUrl || window.location.hash.substr(1);
           createFunctionKey = 'createHashHistory';
           break;
+        case 'hash-maa':
+        case HASH_MAA_HISTORY_TYPE:
+          const pathname = ensureSlashSuffix(ensureSlashPrefix(window.location.pathname));
+
+          initUrl = ensureSlashPrefix(initUrl || window.location.hash.substr(1));
+          baseUrl = (baseUrl && ensureSlashPrefix(baseUrl)) || '';
+
+          getUrlFromLocation = ((baseUrl, location) => {
+            return ensureSlashPrefix(location.hash.substr(1 + baseUrl.length));
+          }).bind(null, baseUrl);
+
+          initUrl = pathname + '#' + initUrl;
+          baseUrl = pathname + '#' + baseUrl;
+
+          createFunctionKey = 'createBrowserHistory';
+
+          break;
         default:
-          throw new Error('unknown history type "' + historyType + '"');
+          reject(Error('unknown history type "' + historyType + '"'));
+          return;
       }
+
+      initUrl = ensureSlashPrefix(initUrl);
+      baseUrl = (baseUrl && trimSlashSuffix(ensureSlashPrefix(baseUrl))) || '/';
+
+      if(initUrl.toLocaleLowerCase().indexOf(baseUrl.toLowerCase()) !== 0) {
+        reject(Error('initial url ' + initUrl + ' does not have a prefix ' + baseUrl));
+        return;
+      }
+
+      initUrl = ensureSlashPrefix(initUrl.substr(baseUrl.length));
 
       isTransitionAllowed = transitionAllowedHandler;
       parseUrl = parseUrlFunction;
@@ -108,13 +186,7 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
     
       history.listen((location, action) => {
         if(action === 'POP') {
-          let routeAt;
-          for(let i = 0; i < routerStates.length; i++) {
-            if(routerStates[i].key === location.key) {
-              routeAt = i;
-              break;
-            }
-          }
+          let routeAt = getStateIndexByKey(location.key);
           if(routeAt === undefined) {
             window.location.reload();
           }
@@ -124,7 +196,17 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
           }
         }
         else if(!location.state || !location.state[routerKey]) {
-          throw new Error('Dont use other methods to change route!');
+          const newState = parseUrl(getUrlFromLocation(location));
+
+          if(action === 'PUSH') {
+            routerStates.splice(routerStatesLocation + 1, routerStates.length - routerStatesLocation - 1, { state: newState, key: location.key });
+            routerStatesLocation++;
+          }
+          else {
+            routerStates[routerStatesLocation] = { state: newState, key: location.key };
+          }
+        
+          routerStateChanged(newState, routerStatesLocation);
         }
         else {
           routerStates[routerStatesLocation].key = location.key;
@@ -153,6 +235,7 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
             return;
           }
           clearTimeout(timeout);
+          timeout = undefined;
           initialised = true;
           if(redirect) {
             if(typeof(redirect) === 'string') {
@@ -172,6 +255,7 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
             return;
           }
           clearTimeout(timeout);
+          timeout = undefined;
           initialised = true;
           routerStatesLocation = 0;
           routerStates.push({ state: initalState, key: history.location.key });
@@ -199,7 +283,11 @@ export const pushRouterStateThroughChange = function(change, locationState) {
 };
 export const pushRouterState = function(newState, locationState) {
   const noBlock = locationState && locationState[noBlockKey];
-  return (noBlock ? Promise.resolve() : promisifyFunctionCall(isTransitionAllowed))
+  return (noBlock ? Promise.resolve() : promisifyFunctionCall(isTransitionAllowed, [{
+    state: getRouterState(),
+    newState: newState,
+    action: 'PUSH'
+  }]))
   .then((allowed) => {
     if(allowed !== false) {
       const url = toUrl(newState);
@@ -222,7 +310,11 @@ export const replaceRouterStateThroughChange = function(change, locationState) {
 };
 export const replaceRouterState = function(newState, locationState) {
   const noBlock = locationState && locationState[noBlockKey];
-  return (noBlock ? Promise.resolve() : promisifyFunctionCall(isTransitionAllowed))
+  return (noBlock ? Promise.resolve() : promisifyFunctionCall(isTransitionAllowed, [{
+    state: getRouterState(),
+    newState: newState,
+    action: 'REPLACE'
+  }]))
   .then((allowed) => {
     if(allowed !== false) {
       const url = toUrl(newState);

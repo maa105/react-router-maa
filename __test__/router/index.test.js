@@ -4,20 +4,6 @@ import { initializeRouter, getRouterState, getRouterStateLocation, getRouterStat
 
 describe('router index', () => {
 
-  const jestFn = (fn) => {
-    if(!fn) {
-      return jest.fn();
-    }
-    const ret = jest.fn(function() {
-      const args = Array.prototype.slice.call(arguments);
-      const fnRet = fn.apply(this, args);
-      ret.mock.results.push({ value: fnRet, context: this });
-      return fnRet;
-    });
-    ret.mock.results = [];
-    return ret;
-  };
-
   beforeEach(() => {
   });
 
@@ -27,7 +13,6 @@ describe('router index', () => {
   test('exports the correct variables', (done) => {
 
     expect(initializeRouter).not.toEqual(initializeRouterCore);
-    expect(initializeRouter.length).toEqual(initializeRouterCore.length - 1);
 
     expect(getRouterState).toEqual(getRouterStateCore);
     expect(getRouterStateLocation).toEqual(getRouterStateLocationCore);
@@ -51,7 +36,7 @@ describe('router index', () => {
 
   test('index\'s initialiseRouter sets the isTransitionAllowed function to that of the transition middleware', (done) => {
     initializeRouter(() => ({}), () => '/test', null, () => {});
-    expect(__PRIVATES__CORE.getIsTransitionAllowed()).toEqual(isTransitionAllowedTransitionMiddleware);
+    expect(__PRIVATES__CORE.get_isTransitionAllowed()).toEqual(isTransitionAllowedTransitionMiddleware);
     done();
   });
 });

@@ -1,37 +1,27 @@
-import { promisifyFunctionCall } from "./router.util";
+import { promisifyFunctionCall, sortedInsert } from "./router.util";
 
-const routerTransitionAllowedCheckFunctions = [];
+const routerTransitionAllowedChecks = [];
 
-export const pushTransitionAllowedCheckFunction = (transitionAllowedCheckFunction, popOncePasses = true) => {
-  if(typeof(transitionAllowedCheckFunction) === 'function') {
-    let f;
+const AllowNavigationResult = { ForceAllow: true, Deny: false, DontCare: undefined };
+
+const priorityComareFunc = (a, b) => a.priority - b.priority;
+
+export const pushTransitionAllowedCheckFunction = (checkFunc, popOnceRouteAllowed = true, priority = 0, popCheckFunc = undefined) => {
+  if(typeof(checkFunc) === 'function') {
+    let obj = { checkFunc, popOnceRouteAllowed, priority, popCheckFunc };
     const popFunc = () => {
-      for(let i = 0; i < routerTransitionAllowedCheckFunctions.length; i++) {
-        if(routerTransitionAllowedCheckFunctions[i] === f) {
-          routerTransitionAllowedCheckFunctions.splice(i, 1);
-          i--;
+      for(let i = 0; i < routerTransitionAllowedChecks.length; i++) {
+        if(routerTransitionAllowedChecks[i] === obj) {
+          routerTransitionAllowedChecks.splice(i, 1);
+          break;
         }
       }
     };
-    if(popOncePasses) {
-      f = () => {
-        const ret = promisifyFunctionCall(transitionAllowedCheckFunction);
-        ret.then((res) => {
-          if(res !== false) {
-            popFunc();
-          }
-        });
-        return ret;
-      };
-    }
-    else {
-      f = transitionAllowedCheckFunction;
-    }
-    routerTransitionAllowedCheckFunctions.push(f);
+    sortedInsert(routerTransitionAllowedChecks, obj, priorityComareFunc);
     return popFunc;
   }
   else {
-    console.error('pushTransitionAllowedCheckFunction attempting to push a transitionAllowedCheckFunction of type ' + typeof(transitionAllowedCheckFunction) + ' (' + transitionAllowedCheckFunction + ')');
+    console.error('pushTransitionAllowedCheckFunction attempting to push a transitionAllowedCheckFunction of type ' + typeof(checkFunc) + ' (' + checkFunc + ')');
   }
 };
 
@@ -40,33 +30,65 @@ export const setCheckIfIsInitialisedFunction = (checkIfIsInitialisedFunction) =>
   isInitialised = checkIfIsInitialisedFunction;
 };
 
-const isTransitionAllowedHandler = () => {
-  const topFunction = routerTransitionAllowedCheckFunctions[routerTransitionAllowedCheckFunctions.length - 1];
-  return topFunction && promisifyFunctionCall(topFunction);
+const isTransitionAllowedHandler = (e) => {
+  return isTransitionAllowedHandlerHelper(e, routerTransitionAllowedChecks.length - 1)
+  .then((allowed) => {
+    for(let i = routerTransitionAllowedChecks.length - 1; i >= 0; i--) {
+      if(routerTransitionAllowedChecks[i].doPop === true) {
+        routerTransitionAllowedChecks.splice(i, 1);
+      }
+    }
+    if(allowed !== AllowNavigationResult.Deny) {
+      for(let i = routerTransitionAllowedChecks.length - 1; i >= 0; i--) {
+        if(routerTransitionAllowedChecks[i].popOnceRouteAllowed || (routerTransitionAllowedChecks[i].popCheckFunc && routerTransitionAllowedChecks[i].popCheckFunc(e))) {
+          routerTransitionAllowedChecks.splice(i, 1);
+        }
+      }
+      return AllowNavigationResult.ForceAllow;
+    }
+    return AllowNavigationResult.Deny;
+  });
+};
+const isTransitionAllowedHandlerHelper = (e, i) => {
+  const top = routerTransitionAllowedChecks[i];
+  if(top) {
+    e = Object.assign({}, e, { popMe: () => {
+      top.doPop = true;
+    } });
+    return promisifyFunctionCall(top.checkFunc, [e])
+    .catch(() => AllowNavigationResult.Deny)
+    .then(function(allow) {
+      if(allow === AllowNavigationResult.ForceAllow || allow === AllowNavigationResult.Deny) {
+        return allow;
+      }
+      if(i > 0) {
+        return isTransitionAllowedHandlerHelper(e, i - 1)
+        .then((othersAllow) => {
+          if(othersAllow === AllowNavigationResult.ForceAllow || othersAllow === AllowNavigationResult.Deny) {
+            return othersAllow;
+          }
+        });
+      }
+    });
+  }
+  return Promise.resolve(AllowNavigationResult.ForceAllow);
 };
 
 let isCheckingIfTransitionIsAllowed = false;
-export const isTransitionAllowed = () => {
+export const isTransitionAllowed = (e) => {
   if(!isInitialised() || isCheckingIfTransitionIsAllowed) {
     return Promise.resolve(false);
   }
   isCheckingIfTransitionIsAllowed = true;
-  return Promise.resolve(isTransitionAllowedHandler())
-  .catch(() => {
-    isCheckingIfTransitionIsAllowed = false;
-    return false;
-  })
+  return isTransitionAllowedHandler(e)
   .then((res) => {
     isCheckingIfTransitionIsAllowed = false;
-    if(res !== false) {
-      return true;
-    }
-    return false;
+    return res;
   });
 };
 
 export const __PRIVATES__ = {
-  routerTransitionAllowedCheckFunctions,
+  routerTransitionAllowedChecks,
   getIsInitialisedFunction() {
     return isInitialised;
   },
@@ -77,6 +99,6 @@ export const __PRIVATES__ = {
   reset() {
     isCheckingIfTransitionIsAllowed = false;
     isInitialised = () => false;
-    routerTransitionAllowedCheckFunctions.splice(0, routerTransitionAllowedCheckFunctions.length);
+    routerTransitionAllowedChecks.splice(0, routerTransitionAllowedChecks.length);
   }
 };
