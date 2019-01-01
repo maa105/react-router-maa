@@ -10,15 +10,21 @@ const priorityComareFunc = (a, b) => a.priority - b.priority;
 export const pushTransitionAllowedCheckFunction = (checkFunc, popOnceRouteAllowed = true, priority = 0, popCheckFunc = undefined) => {
   if(typeof(checkFunc) === 'function') {
     let obj = { checkFunc, popOnceRouteAllowed, priority, popCheckFunc };
+    const pushFunc = sortedInsert.bind(null, routerTransitionAllowedChecks, obj, priorityComareFunc);
     const popFunc = () => {
       for(let i = 0; i < routerTransitionAllowedChecks.length; i++) {
         if(routerTransitionAllowedChecks[i] === obj) {
           routerTransitionAllowedChecks.splice(i, 1);
-          break;
+          return;
+        }
+      }
+      for(let i = 0; i < routerTransitionAllowedChecksPushFunctionsStack.length; i++) {
+        if(routerTransitionAllowedChecksPushFunctionsStack[i] === pushFunc) {
+          routerTransitionAllowedChecksPushFunctionsStack.splice(i, 1);
+          return;
         }
       }
     };
-    const pushFunc = sortedInsert.bind(null, routerTransitionAllowedChecks, obj, priorityComareFunc);
     if(isCheckingIfTransitionIsAllowed) {
       routerTransitionAllowedChecksPushFunctionsStack.push(pushFunc);
     }
