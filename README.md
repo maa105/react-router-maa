@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/maa105/react-router-maa.svg?branch=master)](https://travis-ci.com/maa105/react-router-maa)
+[![Build Status](https://travis-ci.com/maa105/react-router-maa.svg?branch=master)](https://travis-ci.com/maa105/react-router-maa) [![Coverage Status](https://coveralls.io/repos/github/maa105/react-router-maa/badge.svg?branch=master)](https://coveralls.io/github/maa105/react-router-maa?branch=master)
 
 # Router Overview
 
