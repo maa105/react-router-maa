@@ -224,6 +224,57 @@ describe('router.transition-middleware', () => {
 
   });
 
+  test('pushing transition allowed check function while transition is being checked will delay the pushing till the currently running check is over', (done) => {
+
+    isInitialisedReturn = true;
+
+    let resolveFunction;
+    const transitionAllowedCheckFunction = jestFn(function() {
+      return new Promise((resolve) => {
+        resolveFunction = resolve;
+      });
+    });
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(0);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(0);
+    pushTransitionAllowedCheckFunction(transitionAllowedCheckFunction);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(0);
+
+    expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(false);
+    const promise = isTransitionAllowed();
+    expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
+
+    const transitionAllowedCheckFunction2 = () => true;
+
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(0);
+    expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
+    pushTransitionAllowedCheckFunction(transitionAllowedCheckFunction2);
+    expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction);
+    expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(1);
+
+    expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(true);
+    resolveFunction(true);
+
+    promise
+    .then((res) => {
+      expect(__PRIVATES__.getIsCheckingIfTransitionIsAllowed()).toEqual(false);
+      expect(res).toEqual(true);
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks().length).toEqual(1);  // 1 poped since route allowed and replaced by one from routerTransitionAllowedChecksPushFunctionsStack
+      expect(__PRIVATES__.getRouterTransitionAllowedChecksPushFunctionsStack().length).toEqual(0);
+      expect(__PRIVATES__.getRouterTransitionAllowedChecks()[0].checkFunc).toEqual(transitionAllowedCheckFunction2);
+      done();
+    })
+    .catch((err) => {
+      fail(err);
+      done();
+    });
+
+  });
+
   test('allow transition is async and by default pops the function once transition is allowed', (done) => {
 
     isInitialisedReturn = true;

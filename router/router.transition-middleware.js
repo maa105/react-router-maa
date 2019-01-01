@@ -1,6 +1,7 @@
 import { promisifyFunctionCall, sortedInsert } from "./router.util";
 
 const routerTransitionAllowedChecks = [];
+const routerTransitionAllowedChecksPushFunctionsStack = [];
 
 const AllowNavigationResult = { ForceAllow: true, Deny: false, DontCare: undefined };
 
@@ -17,7 +18,13 @@ export const pushTransitionAllowedCheckFunction = (checkFunc, popOnceRouteAllowe
         }
       }
     };
-    sortedInsert(routerTransitionAllowedChecks, obj, priorityComareFunc);
+    const pushFunc = sortedInsert.bind(null, routerTransitionAllowedChecks, obj, priorityComareFunc);
+    if(isCheckingIfTransitionIsAllowed) {
+      routerTransitionAllowedChecksPushFunctionsStack.push(pushFunc);
+    }
+    else {
+      pushFunc();
+    }
     return popFunc;
   }
   else {
@@ -83,6 +90,10 @@ export const isTransitionAllowed = (e) => {
   return isTransitionAllowedHandler(e)
   .then((res) => {
     isCheckingIfTransitionIsAllowed = false;
+    for(let i = 0; i < routerTransitionAllowedChecksPushFunctionsStack.length; i++) {
+      routerTransitionAllowedChecksPushFunctionsStack[i]();
+    }
+    routerTransitionAllowedChecksPushFunctionsStack.splice(0, routerTransitionAllowedChecksPushFunctionsStack.length);
     return res;
   });
 };
@@ -95,6 +106,12 @@ export const __PRIVATES__ = {
   isTransitionAllowedHandler,
   getIsCheckingIfTransitionIsAllowed() {
     return isCheckingIfTransitionIsAllowed;
+  },
+  getRouterTransitionAllowedChecksPushFunctionsStack() {
+    return routerTransitionAllowedChecksPushFunctionsStack;
+  },
+  getRouterTransitionAllowedChecks() {
+    return routerTransitionAllowedChecks;
   },
   reset() {
     isCheckingIfTransitionIsAllowed = false;
