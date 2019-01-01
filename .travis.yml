@@ -8,4 +8,4 @@ node_js:
 install:
 - npm ci
 script:
-- npm run test-once
+- npm run test-once && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
