@@ -12,10 +12,9 @@ describe('router.transition-middleware', () => {
     const ret = jest.fn(function() {
       const args = Array.prototype.slice.call(arguments);
       const fnRet = fn.apply(this, args);
-      ret.mock.results.push({ value: fnRet, context: this });
+      ret.mock.results[ret.mock.results.length - 1].context = this;
       return fnRet;
     });
-    ret.mock.results = [];
     return ret;
   };
 
