@@ -4,6 +4,7 @@ import { promisifyFunctionCall, ensureSlashPrefix, ensureSlashSuffix, trimSlashS
 const noBlockKey = Date.now() + Math.round(Math.random() * 99999999);
 const initKey = Math.round(Math.random() * 999) + Date.now() + Math.round(Math.random() * 999);
 const routerKey = Math.round(Math.random() * 9999) + Date.now() + Math.round(Math.random() * 9999);
+const overrideKey = Math.round(Math.random() * 9999) + Date.now() + Math.round(Math.random() * 9999);
 
 let initialised = false;
 
@@ -63,6 +64,7 @@ export const __PRIVATES__ = {
   routerKey,
   noBlockKey,
   initKey,
+  overrideKey,
   routerStates,
   checkIfTransitionAllowed,
   defaultMergeRouterStateChange: mergeRouterStateChange,
@@ -169,6 +171,14 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
         getUserConfirmation: (key, cb) => {
           const { location, action } = blockArgsByKey[key];
           delete blockArgsByKey[key];
+          if(!location.key) { // history state changed not through our function e.g. location.hash = '#/xyz';
+            const toBeState = parseUrlFunction(location.pathname);
+            cb(false);
+            setTimeout(() => {
+              pushRouterState(toBeState, { [noBlockKey]: true, [overrideKey]: true });
+            }, 150);
+            return Promise.resolve(false);
+          }
           return checkIfTransitionAllowed(location, action, cb);
         },
         basename: baseUrl
@@ -244,10 +254,7 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
             resolve(replaceRouterState(Object.assign({}, initialNoneUrlState, redirect), { [noBlockKey]: true, [initKey]: true }));
           }
           else {
-            routerStatesLocation = 0;
-            routerStates.push({ state: initalState, key: history.location.key });
-            routerStateChanged(initalState, routerStatesLocation, true);
-            resolve(initalState);
+            resolve(replaceRouterState(initalState, { [noBlockKey]: true, [initKey]: true }));
           }
         })
         .catch((err) => {
@@ -296,8 +303,13 @@ export const pushRouterState = function(newState, locationState) {
       routerStatesLocation++;
     
       locationState = Object.assign({}, locationState, { [routerKey]: true });
-      push(url, locationState);
-    
+      if(locationState[overrideKey]) {
+        replace(url, locationState);
+      }
+      else {
+        push(url, locationState);
+      }
+
       routerStateChanged(newState, routerStatesLocation);
       return newState;
     }
@@ -320,7 +332,7 @@ export const replaceRouterState = function(newState, locationState) {
       const url = toUrl(newState);
     
       const isInit = locationState && locationState[initKey];
-    
+
       if(isInit) {
         routerStatesLocation = 0;
         routerStates.push({ state: newState, key: history.location.key });
@@ -330,7 +342,13 @@ export const replaceRouterState = function(newState, locationState) {
       }
       
       locationState = Object.assign({}, locationState, { [routerKey]: true });
-      replace(url, locationState);
+      if(locationState[overrideKey]) {
+        push(url, locationState);
+      }
+      else {
+        replace(url, locationState);
+      }
+
       routerStateChanged(newState, routerStatesLocation, isInit);
       return newState;
     }

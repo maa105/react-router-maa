@@ -534,6 +534,23 @@ describe('router.core', () => {
 
   });
 
+  test('initializeRouter with initializationFunction which returns falsey', (done) => {
+
+    initializationReturn = undefined;
+    const initPromise = initTest();
+    
+    initPromise.then((state) => {
+      expect(state).toEqual({ url: '/', noneUrl: '123' });
+      expect(parseUrl.mock.calls.length).toEqual(1);
+      done();
+    })
+    .catch((err) => {
+      fail(err);
+      done();
+    });
+
+  });
+
   test('initializeRouter with initializationFunction which returns a promise that resolves a state', (done) => {
 
     initializationReturn = Promise.resolve({ foo: 'bar' });
@@ -803,10 +820,104 @@ describe('router.core', () => {
     });
   });
 
-  test('getUserConfirmation uses getUrlFromLocation to get url from location only in push and replace', (done) => {
+  test('getUserConfirmation directly rejects case location has no key (url changed not through our functions e.g. location.hash = \'#/xyz\')', (done) => {
 
     initializationHandler = null;
+    
+    let getUrlFromLocationReturn = '/getUrlFromLocationReturn';
+    const getUrlFromLocation = jestFn(() => getUrlFromLocationReturn);
+
     isTransitionAllowed = true;
+
+    baseUrl = '';
+    initializeRouter(transitionAllowedHandler, parseUrl, toUrl, mergeFuntion, routeChangeHandler, initializationHandler, defaultTimeout, baseUrl, initialNoneUrlState, 'browser', '/browser-init-url')
+    blockFunction = history.block.mock.calls[0][0];
+
+    __PRIVATES__.routerStates.splice(0, __PRIVATES__.routerStates.length,
+      { key: 0, state: { val: 0 } },
+      { key: 1, state: { val: 1 } },
+      { key: 2, state: { val: 2 } },
+      { key: 3, state: { val: 3 } }
+    );
+    
+    __PRIVATES__.set_getUrlFromLocation(getUrlFromLocation);
+    __PRIVATES__.setRouterStateLocation(3);
+
+    let key = blockFunction({ pathname: '/some-path', hash: '#/base/hash-path' }, 'PUSH');
+    expect(getUrlFromLocation.mock.calls.length).toEqual(0);
+    expect(setTimeout.mock.calls.length).toEqual(0);
+    const parseUrlCallCount = parseUrl.mock.calls.length;
+    let isSync = false;
+    const promise = getUserConfirmationFunction(key, function callback(allowed) {
+      isSync = true;
+      expect(allowed).toEqual(false);
+    });
+    expect(isSync).toEqual(true);
+    expect(promise instanceof Promise).toEqual(true);
+
+    expect(getUrlFromLocation.mock.calls.length).toEqual(0);
+    expect(transitionAllowedHandler.mock.calls.length).toEqual(0);
+    
+    expect(parseUrl.mock.calls.length).toEqual(parseUrlCallCount + 1);
+    expect(parseUrl.mock.calls[parseUrlCallCount].length).toEqual(1);
+    expect(parseUrl.mock.calls[parseUrlCallCount][0]).toEqual('/some-path');
+
+    expect(setTimeout.mock.calls.length).toEqual(1);
+    const timeoutTimer = setTimeout.mock.results[0].value;
+    globalClearTimeout(timeoutTimer);
+    expect(setTimeout.mock.calls[0].length).toEqual(2);
+    const timeoutFunc = setTimeout.mock.calls[0][0];
+    const timeoutDuration = setTimeout.mock.calls[0][1];
+    expect(typeof(timeoutFunc)).toEqual('function');
+    expect(timeoutDuration).toEqual(150);
+    
+    isTransitionAllowed = false;
+
+    expect(transitionAllowedHandler.mock.calls.length).toEqual(0);
+    expect(toUrl.mock.calls.length).toEqual(0);
+    expect(history.replace.mock.calls.length).toEqual(0);
+    const routeChangeHandlerCallCount = routeChangeHandler.mock.calls.length;
+    timeoutFunc();
+    expect(transitionAllowedHandler.mock.calls.length).toEqual(0);
+    expect(toUrl.mock.calls.length).toEqual(0);
+    expect(history.replace.mock.calls.length).toEqual(0);
+    expect(routeChangeHandler.mock.calls.length).toEqual(routeChangeHandlerCallCount);
+
+    globalSetTimeout(() => {
+      expect(toUrl.mock.calls.length).toEqual(1);
+      expect(toUrl.mock.calls[0].length).toEqual(1);
+      expect(toUrl.mock.calls[0][0]).toEqual({ url: '/some-path' });
+      expect(__PRIVATES__.routerStates).toEqual([
+        { key: 0, state: { val: 0 } },
+        { key: 1, state: { val: 1 } },
+        { key: 2, state: { val: 2 } },
+        { key: 3, state: { val: 3 } },
+        { state: { url: '/some-path' } },
+      ]);
+
+      expect(history.replace.mock.calls.length).toEqual(1);
+      expect(history.replace.mock.calls[0].length).toEqual(2);
+      expect(history.replace.mock.calls[0][0]).toEqual('/some-path');
+      expect(history.replace.mock.calls[0][1]).toEqual({ [__PRIVATES__.noBlockKey]: true, [__PRIVATES__.overrideKey]: true, [__PRIVATES__.routerKey]: true });
+      
+      expect(routeChangeHandler.mock.calls.length).toEqual(routeChangeHandlerCallCount + 1);
+      expect(routeChangeHandler.mock.calls[routeChangeHandlerCallCount].length).toEqual(2);
+      expect(routeChangeHandler.mock.calls[routeChangeHandlerCallCount][0]).toEqual({ url: '/some-path' });
+      expect(routeChangeHandler.mock.calls[routeChangeHandlerCallCount][1]).toEqual(4);
+  
+      promise.then((r) => {
+        expect(r).toEqual(false);
+        __PRIVATES__.reset();
+        done();
+      });
+    }, 1);
+  
+  });
+
+  test('getUserConfirmation uses getUrlFromLocation to get url from location only in push and replace', (done) => {
+
+    isTransitionAllowed = true;
+    initializationHandler = null;
     
     const promises = [];
     let getUrlFromLocationReturn = '/getUrlFromLocationReturn';
@@ -824,7 +935,7 @@ describe('router.core', () => {
     );
     
     __PRIVATES__.set_getUrlFromLocation(getUrlFromLocation);
-    let key = blockFunction({ pathname: '/some-path', hash: '#/base/hash-path' }, 'PUSH');
+    let key = blockFunction({ pathname: '/some-path', hash: '#/base/hash-path', key: 4 }, 'PUSH');
     expect(getUrlFromLocation.mock.calls.length).toEqual(0);
     promises.push(getUserConfirmationFunction(key, function callback(allowed) {
       expect(allowed).toEqual(true);
@@ -852,7 +963,7 @@ describe('router.core', () => {
     
     getUrlFromLocationReturn = '/getUrlFromLocationReturn2';
     __PRIVATES__.set_getUrlFromLocation(getUrlFromLocation);
-    key = blockFunction({ pathname: '/some-path', hash: '#/base/hash-path' }, 'REPLACE');
+    key = blockFunction({ pathname: '/some-path', hash: '#/base/hash-path', key: 5 }, 'REPLACE');
     expect(getUrlFromLocation.mock.calls.length).toEqual(1);
     promises.push(getUserConfirmationFunction(key, function callback(allowed) {
       expect(allowed).toEqual(true);
@@ -880,7 +991,7 @@ describe('router.core', () => {
     
     getUrlFromLocationReturn = '/getUrlFromLocationReturn3';
     __PRIVATES__.set_getUrlFromLocation(getUrlFromLocation);
-    key = blockFunction({ key: 2, pathname: '/some-path', hash: '#/base/hash-path' }, 'POP');
+    key = blockFunction({ pathname: '/some-path', hash: '#/base/hash-path', key: 2 }, 'POP');
     expect(getUrlFromLocation.mock.calls.length).toEqual(2);
     promises.push(getUserConfirmationFunction(key, function callback(allowed) {
       expect(allowed).toEqual(true);
@@ -934,7 +1045,7 @@ describe('router.core', () => {
       });
       expect(__PRIVATES__.blockArgsByKey[key]).toEqual(undefined);
 
-      key = blockFunction({ pathname: '/some-path' }, 'PUSH');
+      key = blockFunction({ pathname: '/some-path', key: 7 }, 'PUSH');
       isTransitionAllowed = true;
       promises.push(getUserConfirmationFunction(key, function callback(allowed) {
         expect(allowed).toEqual(true);
@@ -947,7 +1058,7 @@ describe('router.core', () => {
       });
       expect(__PRIVATES__.blockArgsByKey[key]).toEqual(undefined);
       
-      key = blockFunction({ pathname: '/some-path' }, 'REPLACE');
+      key = blockFunction({ pathname: '/some-path', key: 8 }, 'REPLACE');
       isTransitionAllowed = {};
       promises.push(getUserConfirmationFunction(key, function callback(allowed) {
         expect(allowed).toEqual(true);
@@ -960,7 +1071,7 @@ describe('router.core', () => {
       });
       expect(__PRIVATES__.blockArgsByKey[key]).toEqual(undefined);
 
-      key = blockFunction({ url: '/some-path' }, 'PUSH');
+      key = blockFunction({ url: '/some-path', key: 9 }, 'PUSH');
       isTransitionAllowed = null;
       promises.push(getUserConfirmationFunction(key, function callback(allowed) {
         expect(allowed).toEqual(true);
@@ -968,7 +1079,7 @@ describe('router.core', () => {
       expect(transitionAllowedHandler.mock.calls.length).toEqual(4);
       expect(__PRIVATES__.blockArgsByKey[key]).toEqual(undefined);
 
-      key = blockFunction({ url: '/some-path' }, 'PUSH');
+      key = blockFunction({ url: '/some-path', key: 10 }, 'PUSH');
       isTransitionAllowed = false;
       promises.push(getUserConfirmationFunction(key, function callback(allowed) {
         expect(allowed).toEqual(false);
@@ -976,7 +1087,7 @@ describe('router.core', () => {
       expect(transitionAllowedHandler.mock.calls.length).toEqual(5);
       expect(__PRIVATES__.blockArgsByKey[key]).toEqual(undefined);
 
-      key = blockFunction({ url: '/some-path' }, 'PUSH');
+      key = blockFunction({ url: '/some-path', key: 11 }, 'PUSH');
       isTransitionAllowed = Promise.reject();
       promises.push(getUserConfirmationFunction(key, function callback(allowed) {
         expect(allowed).toEqual(false);
@@ -984,7 +1095,7 @@ describe('router.core', () => {
       expect(transitionAllowedHandler.mock.calls.length).toEqual(6);
       expect(__PRIVATES__.blockArgsByKey[key]).toEqual(undefined);
 
-      key = blockFunction({ url: '/some-path' }, 'PUSH');
+      key = blockFunction({ url: '/some-path', key: 12 }, 'PUSH');
       isTransitionAllowed = Promise.resolve();
       promises.push(getUserConfirmationFunction(key, function callback(allowed) {
         expect(allowed).toEqual(true);
@@ -1010,7 +1121,7 @@ describe('router.core', () => {
 
     initPromise.then((state) => {
 
-      const key = blockFunction({}, 'PUSH');
+      const key = blockFunction({ key: 13}, 'PUSH');
       let isTransitionAllowedResolve;
       isTransitionAllowed = new Promise((resolve) => {
         isTransitionAllowedResolve = resolve;
@@ -1044,7 +1155,7 @@ describe('router.core', () => {
 
     initPromise.then(() => {
 
-      const key = blockFunction({ state: { [__PRIVATES__.noBlockKey]: true } }, 'PUSH');
+      const key = blockFunction({ state: { [__PRIVATES__.noBlockKey]: true }, key: 14 }, 'PUSH');
       isTransitionAllowed = false;
 
       getUserConfirmationFunction(key, function callback(allowed) {
@@ -1068,7 +1179,7 @@ describe('router.core', () => {
 
     initPromise.then(() => {
 
-      const key = blockFunction({ state: { [__PRIVATES__.noBlockKey]: true } }, 'POP');
+      const key = blockFunction({ state: { [__PRIVATES__.noBlockKey]: true }, key: 15 }, 'POP');
       isTransitionAllowed = false;
 
       getUserConfirmationFunction(key, function callback(allowed) {
@@ -1276,6 +1387,80 @@ describe('router.core', () => {
 
         expect(history.push.mock.calls.length).toEqual(1);
         expect(history.push.mock.calls[0]).toEqual(['/test/1', { some: 'location state', [__PRIVATES__.routerKey]: true }]);
+
+        expect(routeChangeHandler.mock.calls.length).toEqual(2);
+        expect(routeChangeHandler.mock.calls[1]).toEqual([{ url: '/test/1' }, 1]);
+
+        expect(newState).toEqual({ url: '/test/1' });
+
+        done();
+      });
+      expect(getRouterStateLocation()).toEqual(0);
+      expect(transitionAllowedHandler.mock.calls.length).toEqual(1);
+
+      globalSetTimeout(() => {
+        expect(transitionAllowed).toEqual(false);
+        expect(__PRIVATES__.routerStates).toEqual([
+          { key: 0, state: { val: 0 } },
+          { key: 1, state: { val: 1 } },
+          { key: 2, state: { val: 2 } },
+          { key: 3, state: { val: 3 } }
+        ]);
+        expect(history.push.mock.calls.length).toEqual(0);
+        isTransitionAllowedResolve();
+      }, 10);
+    })
+    .catch((err) => {
+      fail(err);
+      done();
+    });
+  });
+
+  test('pushRouterState if override is set in locationState calls history.replace instead of history.push', (done) => {
+
+    initializationHandler = null;
+    const initPromise = initTest();
+
+    initPromise.then(() => {
+
+      let isTransitionAllowedResolve;
+      isTransitionAllowed = new Promise((resolve) => {
+        isTransitionAllowedResolve = resolve;
+      });
+
+      __PRIVATES__.routerStates.splice(0, __PRIVATES__.routerStates.length,
+        { key: 0, state: { val: 0 } },
+        { key: 1, state: { val: 1 } },
+        { key: 2, state: { val: 2 } },
+        { key: 3, state: { val: 3 } }
+      );
+
+      expect(getRouterStateLocation()).toEqual(0);
+      expect(transitionAllowedHandler.mock.calls.length).toEqual(0);
+      let transitionAllowed = false;
+      pushRouterState({ url: '/test/1' }, { some: 'location state', [__PRIVATES__.overrideKey]: true })
+      .then((newState) => {
+        transitionAllowed = true;
+
+        expect(transitionAllowedHandler.mock.calls.length).toEqual(1);
+        expect(transitionAllowedHandler.mock.calls[0][0]).toEqual({
+          state: { val: 0 },
+          newState: { url: '/test/1' },
+          action: 'PUSH'
+        });
+
+        expect(toUrl.mock.calls.length).toEqual(1);
+        expect(toUrl.mock.calls[0]).toEqual([{ url: '/test/1' }]);
+
+        expect(__PRIVATES__.routerStates).toEqual([
+          { key: 0, state: { val: 0 } },
+          { state: { url: '/test/1' } }
+        ]);
+        expect(getRouterStateLocation()).toEqual(1);
+
+        expect(history.push.mock.calls.length).toEqual(0);
+        expect(history.replace.mock.calls.length).toEqual(1);
+        expect(history.replace.mock.calls[0]).toEqual(['/test/1', { some: 'location state', [__PRIVATES__.overrideKey]: true, [__PRIVATES__.routerKey]: true }]);
 
         expect(routeChangeHandler.mock.calls.length).toEqual(2);
         expect(routeChangeHandler.mock.calls[1]).toEqual([{ url: '/test/1' }, 1]);
@@ -1642,6 +1827,81 @@ describe('router.core', () => {
 
         expect(history.replace.mock.calls.length).toEqual(1);
         expect(history.replace.mock.calls[0]).toEqual(['/test/1', { some: 'location state', [__PRIVATES__.routerKey]: true }]);
+
+        expect(routeChangeHandler.mock.calls.length).toEqual(2);
+        expect(routeChangeHandler.mock.calls[1]).toEqual([{ url: '/test/1' }, 0, undefined]);
+
+        expect(newState).toEqual({ url: '/test/1' });
+
+        done();
+      });
+      expect(transitionAllowedHandler.mock.calls.length).toEqual(1);
+
+      globalSetTimeout(() => {
+        expect(transitionAllowed).toEqual(false);
+        expect(__PRIVATES__.routerStates).toEqual([
+          { key: 0, state: { val: 0 } },
+          { key: 1, state: { val: 1 } },
+          { key: 2, state: { val: 2 } },
+          { key: 3, state: { val: 3 } }
+        ]);
+        expect(history.replace.mock.calls.length).toEqual(0);
+        isTransitionAllowedResolve();
+      }, 10);
+    })
+    .catch((err) => {
+      fail(err);
+      done();
+    });
+  });
+
+  test('replaceRouterState if override is set in locationState calls history.push instead of history.replace', (done) => {
+
+    initializationHandler = null;
+    const initPromise = initTest();
+
+    initPromise.then(() => {
+
+      let isTransitionAllowedResolve;
+      isTransitionAllowed = new Promise((resolve) => {
+        isTransitionAllowedResolve = resolve;
+      });
+
+      __PRIVATES__.routerStates.splice(0, __PRIVATES__.routerStates.length,
+        { key: 0, state: { val: 0 } },
+        { key: 1, state: { val: 1 } },
+        { key: 2, state: { val: 2 } },
+        { key: 3, state: { val: 3 } }
+      );
+
+      expect(getRouterStateLocation()).toEqual(0);
+      expect(transitionAllowedHandler.mock.calls.length).toEqual(0);
+      let transitionAllowed = false;
+      replaceRouterState({ url: '/test/1' }, { some: 'location state', [__PRIVATES__.overrideKey]: true })
+      .then((newState) => {
+        transitionAllowed = true;
+
+        expect(transitionAllowedHandler.mock.calls.length).toEqual(1);
+        expect(transitionAllowedHandler.mock.calls[0][0]).toEqual({
+          state: { val: 0 },
+          newState: { url: '/test/1' },
+          action: 'REPLACE'
+        });
+
+        expect(toUrl.mock.calls.length).toEqual(1);
+        expect(toUrl.mock.calls[0]).toEqual([{ url: '/test/1' }]);
+
+        expect(__PRIVATES__.routerStates).toEqual([
+          { state: { url: '/test/1' } },
+          { key: 1, state: { val: 1 } },
+          { key: 2, state: { val: 2 } },
+          { key: 3, state: { val: 3 } }
+        ]);
+        expect(getRouterStateLocation()).toEqual(0);
+
+        expect(history.replace.mock.calls.length).toEqual(0);
+        expect(history.push.mock.calls.length).toEqual(1);
+        expect(history.push.mock.calls[0]).toEqual(['/test/1', { some: 'location state', [__PRIVATES__.overrideKey]: true, [__PRIVATES__.routerKey]: true }]);
 
         expect(routeChangeHandler.mock.calls.length).toEqual(2);
         expect(routeChangeHandler.mock.calls[1]).toEqual([{ url: '/test/1' }, 0, undefined]);
