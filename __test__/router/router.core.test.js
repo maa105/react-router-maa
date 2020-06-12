@@ -1729,6 +1729,43 @@ describe('router.core', () => {
     });
   });
 
+  test('pushRouterStateThroughChange calls merge function no previous state', (done) => {
+
+    initializationHandler = null;
+    const initPromise = initTest();
+
+    initPromise.then(() => {
+
+      isTransitionAllowed = true;
+
+      __PRIVATES__.routerStates.splice(0, __PRIVATES__.routerStates.length);
+
+      const mergeRouterStateChange = jestFn(() => {
+        return { other: 'other' };
+      });
+      __PRIVATES__.set_mergeRouterStateChange(mergeRouterStateChange);
+
+      pushRouterStateThroughChange({ url: '/test/1' }, { some: 'location state' })
+      .then((newState) => {
+
+        expect(newState).toEqual({
+          other: 'other'
+        });
+        expect(mergeRouterStateChange.mock.calls.length).toEqual(1);
+        expect(mergeRouterStateChange.mock.calls[0]).toEqual([
+          {},
+          { url: '/test/1' }
+        ]);
+
+        done();
+      });
+    })
+    .catch((err) => {
+      fail(err);
+      done();
+    });
+  });
+
   test('pushRouterStateThroughChange calls isTransitionAllowed is async and pushes the new state once transition is allowed', (done) => {
 
     initializationHandler = null;
@@ -2200,6 +2237,43 @@ describe('router.core', () => {
         expect(mergeRouterStateChange.mock.calls.length).toEqual(1);
         expect(mergeRouterStateChange.mock.calls[0]).toEqual([
           {"noneUrl": "123", "url": "/"},
+          { url: '/test/1' }
+        ]);
+
+        done();
+      });
+    })
+    .catch((err) => {
+      fail(err);
+      done();
+    });
+  });
+
+  test('replaceRouterStateThroughChange calls merge function no previous state', (done) => {
+
+    initializationHandler = null;
+    const initPromise = initTest();
+
+    initPromise.then(() => {
+
+      isTransitionAllowed = true;
+
+      __PRIVATES__.routerStates.splice(0, __PRIVATES__.routerStates.length);
+    
+      const mergeRouterStateChange = jestFn(() => {
+        return { other: 'other' };
+      });
+      __PRIVATES__.set_mergeRouterStateChange(mergeRouterStateChange);
+
+      replaceRouterStateThroughChange({ url: '/test/1' }, { some: 'location state' })
+      .then((newState) => {
+
+        expect(newState).toEqual({
+          other: 'other'
+        });
+        expect(mergeRouterStateChange.mock.calls.length).toEqual(1);
+        expect(mergeRouterStateChange.mock.calls[0]).toEqual([
+          {},
           { url: '/test/1' }
         ]);
 

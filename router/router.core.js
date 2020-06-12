@@ -285,7 +285,8 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
 };
 
 export const pushRouterStateThroughChange = function(change, locationState) {
-  const newState = mergeRouterStateChange(routerStates[routerStatesLocation].state, change);
+  const oldState = (routerStates[routerStatesLocation] && routerStates[routerStatesLocation].state) || {};
+  const newState = mergeRouterStateChange(oldState, change);
   return pushRouterState(newState, locationState);
 };
 export const pushRouterState = function(newState, locationState) {
@@ -317,7 +318,8 @@ export const pushRouterState = function(newState, locationState) {
   }).catch(() => false);
 };
 export const replaceRouterStateThroughChange = function(change, locationState) {
-  const newState = mergeRouterStateChange(routerStates[routerStatesLocation].state, change);
+  const oldState = (routerStates[routerStatesLocation] && routerStates[routerStatesLocation].state) || {};
+  const newState = mergeRouterStateChange(oldState, change);
   return replaceRouterState(newState, locationState);
 };
 export const replaceRouterState = function(newState, locationState) {
