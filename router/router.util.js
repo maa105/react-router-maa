@@ -39,6 +39,10 @@ export const sortedInsert = (arr, val, compFn) => {
   return arr;
 };
 
+export const ensurePathName = (pathname) => {
+  return pathname || '/';
+};
+
 export const ensureSlashPrefix = (path) => {
   if(!path) {
     return '/';
@@ -48,15 +52,7 @@ export const ensureSlashPrefix = (path) => {
   }
   return path;
 };
-export const ensureSlashSuffix = (path) => {
-  if(!path) {
-    return '/';
-  }
-  if(path[path.length - 1] === '/') {
-    return path;
-  }
-  return path + '/';
-};
+
 export const trimSlashSuffix = (path) => {
   if(!path) {
     return '';

@@ -1,4 +1,4 @@
-import { promisifyFunctionCall, sortedInsert, ensureSlashPrefix, ensureSlashSuffix, trimSlashSuffix } from '../../router/router.util'
+import { promisifyFunctionCall, sortedInsert, ensurePathName, ensureSlashPrefix, trimSlashSuffix } from '../../router/router.util'
 
 describe('router index', () => {
 
@@ -150,6 +150,28 @@ describe('router index', () => {
     });
   });
 
+  describe('ensurePathName', () => {
+    test('falsey returns /', (done) => {
+
+      expect(ensurePathName()).toEqual('/');
+      expect(ensurePathName(undefined)).toEqual('/');
+      expect(ensurePathName(null)).toEqual('/');
+      expect(ensurePathName(false)).toEqual('/');
+      expect(ensurePathName('')).toEqual('/');
+      expect(ensurePathName(NaN)).toEqual('/');
+
+      done();
+    });
+    test('truthy returns self', (done) => {
+
+      const t = { t: 1 };
+      expect(ensurePathName('/test')).toEqual('/test');
+      expect(ensurePathName(t) === t).toEqual(true);
+
+      done();
+    });
+  });
+
   describe('ensureSlashPrefix', () => {
     test('falsey returns /', (done) => {
 
@@ -171,32 +193,6 @@ describe('router index', () => {
     test('if first char is / it returns as is', (done) => {
 
       expect(ensureSlashPrefix('/123')).toEqual('/123');
-
-      done();
-    });
-  });
-
-  describe('ensureSlashSuffix', () => {
-    test('falsey returns /', (done) => {
-
-      expect(ensureSlashSuffix()).toEqual('/');
-      expect(ensureSlashSuffix(undefined)).toEqual('/');
-      expect(ensureSlashSuffix(null)).toEqual('/');
-      expect(ensureSlashSuffix(false)).toEqual('/');
-      expect(ensureSlashSuffix('')).toEqual('/');
-      expect(ensureSlashSuffix(NaN)).toEqual('/');
-
-      done();
-    });
-    test('if last char is not / it gets added', (done) => {
-
-      expect(ensureSlashSuffix('123')).toEqual('123/');
-
-      done();
-    });
-    test('if last char is / it returns as is', (done) => {
-
-      expect(ensureSlashSuffix('123/')).toEqual('123/');
 
       done();
     });

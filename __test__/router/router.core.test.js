@@ -265,7 +265,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(2);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[1][0].basename).toEqual('/browser-init-url/#');
+    expect(historyCreator.createBrowserHistory.mock.calls[1][0].basename).toEqual('/browser-init-url#');
     expect(initializationHandler.mock.calls.length).toEqual(4);
     expect(initializationHandler.mock.calls[3][0]).toEqual({ url: '/', noneUrl: '123' });
 
@@ -277,7 +277,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(3);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[2][0].basename).toEqual('/browser-init-url/#');
+    expect(historyCreator.createBrowserHistory.mock.calls[2][0].basename).toEqual('/browser-init-url#');
     expect(initializationHandler.mock.calls.length).toEqual(5);
     expect(initializationHandler.mock.calls[4][0]).toEqual({ url: '/', noneUrl: '123' });
 
@@ -289,7 +289,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(4);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[3][0].basename).toEqual('/browser-init-url/#/hash-init-url');
+    expect(historyCreator.createBrowserHistory.mock.calls[3][0].basename).toEqual('/browser-init-url#/hash-init-url');
     expect(initializationHandler.mock.calls.length).toEqual(6);
     expect(initializationHandler.mock.calls[5][0]).toEqual({ url: '/', noneUrl: '123' });
 
@@ -301,7 +301,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(5);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[4][0].basename).toEqual('/browser-init-url/#');
+    expect(historyCreator.createBrowserHistory.mock.calls[4][0].basename).toEqual('/browser-init-url#');
     expect(initializationHandler.mock.calls.length).toEqual(7);
     expect(initializationHandler.mock.calls[6][0]).toEqual({ url: '/hash-init-url', noneUrl: '123' });
 
@@ -364,7 +364,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(2);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[1][0].basename).toEqual('/browser-init-url/#');
+    expect(historyCreator.createBrowserHistory.mock.calls[1][0].basename).toEqual('/browser-init-url#');
     expect(initializationHandler.mock.calls.length).toEqual(4);
     expect(initializationHandler.mock.calls[3][0]).toEqual({ url: '/hash-init-url', noneUrl: '123' });
 
@@ -376,7 +376,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(3);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[2][0].basename).toEqual('/browser-init-url/#');
+    expect(historyCreator.createBrowserHistory.mock.calls[2][0].basename).toEqual('/browser-init-url#');
     expect(initializationHandler.mock.calls.length).toEqual(5);
     expect(initializationHandler.mock.calls[4][0]).toEqual({ url: '/hash-init-url', noneUrl: '123' });
 
@@ -388,7 +388,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(4);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[3][0].basename).toEqual('/browser-init-url/#/hash-init-url');
+    expect(historyCreator.createBrowserHistory.mock.calls[3][0].basename).toEqual('/browser-init-url#/hash-init-url');
     expect(initializationHandler.mock.calls.length).toEqual(6);
     expect(initializationHandler.mock.calls[5][0]).toEqual({ url: '/', noneUrl: '123' });
 
@@ -400,7 +400,7 @@ describe('router.core', () => {
     expect(historyCreator.createBrowserHistory.mock.calls.length).toEqual(5);
     expect(historyCreator.createMemoryHistory.mock.calls.length).toEqual(1);
     expect(historyCreator.createHashHistory.mock.calls.length).toEqual(1);
-    expect(historyCreator.createBrowserHistory.mock.calls[4][0].basename).toEqual('/browser-init-url/#');
+    expect(historyCreator.createBrowserHistory.mock.calls[4][0].basename).toEqual('/browser-init-url#');
     expect(initializationHandler.mock.calls.length).toEqual(7);
     expect(initializationHandler.mock.calls[6][0]).toEqual({ url: '/hash-init-url', noneUrl: '123' });
 
@@ -482,7 +482,7 @@ describe('router.core', () => {
       done();
     })
     .catch((err) => {
-      expect(err.message).toEqual('initial url /browser-init-url/#/hash-init-url does not have a prefix /browser-init-url/#/other');
+      expect(err.message).toEqual('initial url /browser-init-url#/hash-init-url does not have a prefix /browser-init-url#/other');
       done();
     })
   });

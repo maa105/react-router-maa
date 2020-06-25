@@ -1,5 +1,5 @@
 import * as historyCreator from 'history';
-import { promisifyFunctionCall, ensureSlashPrefix, ensureSlashSuffix, trimSlashSuffix } from './router.util';
+import { promisifyFunctionCall, ensureSlashPrefix, trimSlashSuffix, ensurePathName } from './router.util';
 
 const noBlockKey = Date.now() + Math.round(Math.random() * 99999999);
 const initKey = Math.round(Math.random() * 999) + Date.now() + Math.round(Math.random() * 999);
@@ -130,7 +130,7 @@ export const initializeRouter = (transitionAllowedHandler, parseUrlFunction, toU
           break;
         case 'hash-maa':
         case HASH_MAA_HISTORY_TYPE:
-          const pathname = ensureSlashSuffix(ensureSlashPrefix(window.location.pathname));
+          const pathname = ensurePathName(window.location.pathname);
 
           initUrl = ensureSlashPrefix(initUrl || window.location.hash.substr(1));
           baseUrl = (baseUrl && ensureSlashPrefix(baseUrl)) || '';
